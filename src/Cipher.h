@@ -48,7 +48,7 @@ public:
    *  @param  ---
    *  @return secure key as pointer on char array
   */
-  char * getKey();
+  const char * getKey();
 
 
   /** Encrypt (AES-128bit ECB encryption mode) the @param plainText char array with given key and store the output in @return outputBuffer
