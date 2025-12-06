@@ -12,8 +12,6 @@
 #include <Arduino.h>
 //#include <WString.h>
 
-#define CIPHER_DEBUG
-
 class Cipher {
 public:
   /** Default constructor, privateChiperKey property will be set on a default, unsecure value
@@ -22,20 +20,20 @@ public:
    *  @return ---
   */
   Cipher();
-  
+
   /** Overloaded constructor, privateChiperKey will be set on @param key
    *
    *  @param key secure key as pointer on char array
    *  @return ---
   */
-	Cipher(char * key);
+	Cipher(const char * key);
 
-  /** Default destructor, privateChiperKey will deleted
+  /** Default destructor
    *
    *  @param  ---
    *  @return ---
   */
-  virtual ~Cipher();
+  ~Cipher() = default;
 
 
   /** Set privateChiperKey on given @param key
@@ -43,13 +41,13 @@ public:
    *  @param key secure key as pointer on char array
    *  @return ---
   */
-  void setKey(char * key);
+  void setKey(const char * key);
 
   /** Returns the privateCipherKey
    *
    *  @param  ---
    *  @return secure key as pointer on char array
-  */  
+  */
   char * getKey();
 
 
@@ -58,14 +56,14 @@ public:
    *  @param plainText buffer of length 16 characters
    *  @param key secure key as pointer on char array, function call getKey() is possible, instead of using the second function encrypt()
    *  @return outputBuffer buffer of length 16 characters filled with the encryption result
-  */ 
+  */
 	void encrypt(char * plainText, char * key, unsigned char * outputBuffer);
 
   /** Encrypt (AES-128bit ECB encryption mode) the @param plainText char array with @property privateCipherKey and store the output in @return outputBuffer
    *
    *  @param plainText buffer of length 16 characters
    *  @return outputBuffer buffer of length 16 characters filled with the encryption result
-  */ 
+  */
   void encrypt(char * plainText, unsigned char * outputBuffer);
 
   /** Decrypt (AES-128bit ECB decryption mode) the @param cipherText char array with given key and store the output in @return outputBuffer
@@ -73,14 +71,14 @@ public:
    *  @param cipherText buffer of length 16 characters
    *  @param key secure key as pointer on char array, function call getKey() is possible, instead of using the second function decrypt()
    *  @return outputBuffer buffer of length 16 characters filled with the decryption result
-  */  
+  */
   void decrypt(unsigned char * cipherText, char * key, unsigned char * outputBuffer);
 
   /** Decrypt (AES-128bit ECB decryption mode) the @param cipherText char array with @property privateCipherKey and store the output in @return outputBuffer
    *
    *  @param cipherText buffer of length 16 characters
    *  @return outputBuffer buffer of length 16 characters filled with the decryption result
-  */  
+  */
   void decrypt(unsigned char * cipherText, unsigned char * outputBuffer);
 
 
@@ -144,9 +142,9 @@ public:
    *  @return decipheredTextString String of length 16 characters filled with the decryption result
   */
   String decryptString(String cipherText);
-  
+
 private:
-	char * privateCipherKey;
+	char privateCipherKey[17];
 };
 
 #endif /* CIPHER_H_ */

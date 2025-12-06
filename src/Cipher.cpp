@@ -7,39 +7,36 @@
 
 #include "Cipher.h"
 
+#define CIPHER_DEFAULT_KEY "abcdefghijklmnop"
+
 Cipher::Cipher() {
   // default unsecure key, its highly recommended to use the overloaded constructor and the function setKey()
-  // sometimes serval keys wont work 
+  // sometimes serval keys wont work
   // https://tls.mbed.org/kb/how-to/generate-an-aes-key
-  
-  setKey("abcdefghijklmnop");
+
+  setKey(CIPHER_DEFAULT_KEY);
 }
 
-Cipher::Cipher(char * key) {
+Cipher::Cipher(const char * key) {
 	setKey(key);
 }
 
-Cipher::~Cipher() {
-	delete privateCipherKey;
-}
-
-void Cipher::setKey(char * key) {
-  // aes-128bit mode means that your cipher key can only be 16 characters long 
+void Cipher::setKey(const char * key) {
+  // aes-128bit mode means that your cipher key can only be 16 characters long
   // futhermore, only chracters in the cipher key are allowed, not numbers!
   // 16 characters + '\0'
-  
+
   if( strlen(key) > 16 ) {
-    privateCipherKey = new char[17];
-    (String(key).substring(0,16)).toCharArray(privateCipherKey, 17);
-    
+    String(key).substring(0,16).toCharArray(privateCipherKey, 17);
+
     #ifdef CIPHER_DEBUG
       Serial.println("[cipher] error: cipher key to long! Will be cutted to 16 characters.");
       Serial.println("[cipher] => " + String(key));
       Serial.println("[cipher] => " + String(privateCipherKey));
-    #endif  
+    #endif
   } else if( strlen(key) < 16 ) {
-    privateCipherKey = "abcdefghijklmnop";
-    
+    strcpy(privateCipherKey, CIPHER_DEFAULT_KEY);
+
     #ifdef CIPHER_DEBUG
       Serial.println("[cipher] error: cipher key to short! Standard cipher key will be used.");
     #endif
@@ -47,7 +44,7 @@ void Cipher::setKey(char * key) {
     #ifdef CIPHER_DEBUG
       Serial.println("[cipher] cipher key length matched. Using this key.");
     #endif
-    privateCipherKey = key;
+    strcpy(privateCipherKey, key);
   }
 }
 
@@ -55,11 +52,10 @@ char * Cipher::getKey() {
   return privateCipherKey;
 }
 
- 
 void Cipher::encrypt(char * plainText, char * key, unsigned char * outputBuffer) {
   // encrypt plainText buffer of length 16 characters
   mbedtls_aes_context aes;
- 
+
   mbedtls_aes_init( &aes );
   mbedtls_aes_setkey_enc( &aes, (const unsigned char*) key, strlen(key) * 8 );
   mbedtls_aes_crypt_ecb( &aes, MBEDTLS_AES_ENCRYPT, (const unsigned char*)plainText, outputBuffer);
@@ -73,7 +69,7 @@ void Cipher::encrypt(char * plainText, unsigned char * outputBuffer) {
 void Cipher::decrypt(unsigned char * cipherText, char * key, unsigned char * outputBuffer) {
   // encrypt ciphered chipherText buffer of length 16 characters to plain text
   mbedtls_aes_context aes;
- 
+
   mbedtls_aes_init( &aes );
   mbedtls_aes_setkey_dec( &aes, (const unsigned char*) key, strlen(key) * 8 );
   mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_DECRYPT, (const unsigned char*)cipherText, outputBuffer);
@@ -89,10 +85,10 @@ String Cipher::encryptBuffer(char * plainText, char * key) {
   // returns encrypted String of plainText (length: 16 characters)
   String cipherTextString = "";
   unsigned char cipherTextOutput[16];
-  
+
   encrypt(plainText, key, cipherTextOutput);
-  
-  for (int i = 0; i < 16; i++) {
+
+  for (int8_t i = 0; i < 16; i++) {
     cipherTextString = cipherTextString + (char)cipherTextOutput[i];
   }
 
@@ -109,13 +105,13 @@ String Cipher::decryptBuffer(String cipherText, char * key) {
   unsigned char cipherTextOutput[16];
   unsigned char decipheredTextOutput[16];
 
-  for (int i = 0; i < 16; i++) {
+  for (int8_t i = 0; i < 16; i++) {
     cipherTextOutput[i] = (char)cipherText[i];
   }
-  
+
   decrypt(cipherTextOutput, key, decipheredTextOutput);
 
-  for (int i = 0; i < 16; i++) {
+  for (int8_t i = 0; i < 16; i++) {
     decipheredTextString = decipheredTextString + (char)decipheredTextOutput[i];
 
     if(decipheredTextString[i] == '\0') {
@@ -136,20 +132,20 @@ String Cipher::encryptString(String plainText, char * key) {
   constexpr int BUFF_SIZE=16;
   String buffer = "";
   String cipherTextString = "";
-  int index = plainText.length() / BUFF_SIZE;
-  
+  const int index = plainText.length() / BUFF_SIZE;
+
   for(int block=0; block < plainText.length()/BUFF_SIZE; block++) {
       for(int j = block*BUFF_SIZE; j < (block+1)*BUFF_SIZE; j++) {
         buffer += plainText[j];
       }
-      
+
       cipherTextString += encryptBuffer(const_cast<char*>(buffer.c_str()), key);
       buffer = "";
   }
 
   buffer="";
 
-  if( plainText.length()%BUFF_SIZE > 0 ) {    
+  if( plainText.length()%BUFF_SIZE > 0 ) {
     for(int bytes_read=(index*BUFF_SIZE); bytes_read <= (index*BUFF_SIZE) + plainText.length()%BUFF_SIZE; bytes_read++) {
       buffer += plainText[bytes_read];
     };
@@ -168,12 +164,12 @@ String Cipher::decryptString(String cipherText, char * key) {
   constexpr int BUFF_SIZE=16;
   String buffer = "";
   String decipheredTextString = "";
-  
+
   for(int block=0; block < cipherText.length()/BUFF_SIZE; block++) {
       for(int j = block*BUFF_SIZE; j < (block+1)*BUFF_SIZE; j++) {
         buffer += cipherText[j];
       }
-      
+
       decipheredTextString += decryptBuffer(buffer, key);
       buffer = "";
   }
